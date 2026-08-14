@@ -1,4 +1,5 @@
-﻿import Link from "next/link";
+﻿import { SiteHeader } from "@/components/site-header";
+import Link from "next/link";
 import {
   ArrowRight,
   BookOpen,
@@ -10,73 +11,7 @@ import {
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-background/95">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-          <Link
-            href="/"
-            className="flex items-center gap-2 font-semibold"
-          >
-            <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <School className="size-5" />
-            </div>
-
-            <div>
-              <p className="text-sm font-semibold leading-none">
-                SPS Qaziabad
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                School Management
-              </p>
-            </div>
-          </Link>
-
-          <nav className="hidden items-center gap-6 md:flex">
-            <Link
-              href="/"
-              className="text-sm font-medium hover:text-primary"
-            >
-              Home
-            </Link>
-
-            <Link
-              href="/about"
-              className="text-sm font-medium text-muted-foreground hover:text-primary"
-            >
-              About
-            </Link>
-
-            <Link
-              href="/academics"
-              className="text-sm font-medium text-muted-foreground hover:text-primary"
-            >
-              Academics
-            </Link>
-
-            <Link
-              href="/campus"
-              className="text-sm font-medium text-muted-foreground hover:text-primary"
-            >
-              Campus
-            </Link>
-
-            <Link
-              href="/admissions"
-              className="text-sm font-medium text-muted-foreground hover:text-primary"
-            >
-              Admissions
-            </Link>
-          </nav>
-
-          {/* Admin Login */}
-          <Link
-            href="/login"
-            className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
-          >
-            Admin Login
-          </Link>
-        </div>
-      </header>
+      <SiteHeader />
 
       {/* Hero */}
       <section className="border-b">

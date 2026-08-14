@@ -12,6 +12,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   providers: [
     Credentials({
+      name: "Credentials",
+
       credentials: {
         email: {
           label: "Email",
@@ -31,7 +33,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        const email = credentials.email.trim().toLowerCase();
+        const email = credentials.email
+          .trim()
+          .toLowerCase();
+
+        const password = credentials.password;
 
         const user = await prisma.user.findUnique({
           where: {
@@ -40,21 +46,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
 
         if (!user) {
+          console.log("AUTH: user not found");
           return null;
         }
 
         if (user.status !== "ACTIVE") {
+          console.log("AUTH: user inactive");
           return null;
         }
 
         const passwordValid = await bcrypt.compare(
-          credentials.password,
+          password,
           user.passwordHash,
         );
 
         if (!passwordValid) {
+          console.log("AUTH: invalid password");
           return null;
         }
+
+        console.log(
+          `AUTH: login successful - ${user.email} (${user.role})`,
+        );
 
         return {
           id: user.id,
@@ -82,7 +95,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as UserRole;
-        session.user.schoolId = token.schoolId as string | null;
+        session.user.schoolId =
+          (token.schoolId as string | null) ?? null;
       }
 
       return session;

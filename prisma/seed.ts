@@ -21,30 +21,70 @@ async function main() {
   const adminPassword = process.env.SEED_ADMIN_PASSWORD;
 
   if (!adminPassword) {
-    throw new Error("SEED_ADMIN_PASSWORD is missing from .env.local");
+    throw new Error(
+      "SEED_ADMIN_PASSWORD is missing from .env.local",
+    );
   }
 
-  const passwordHash = bcrypt.hashSync(adminPassword, 12);
+  const superAdminPassword =
+    process.env.SEED_SUPER_ADMIN_PASSWORD;
 
+  if (!superAdminPassword) {
+    throw new Error(
+      "SEED_SUPER_ADMIN_PASSWORD is missing from .env.local",
+    );
+  }
+
+  const schoolAdminPasswordHash =
+    bcrypt.hashSync(adminPassword, 12);
+
+  const superAdminPasswordHash =
+    bcrypt.hashSync(superAdminPassword, 12);
+
+  // Create / find the school
   const school = await prisma.school.upsert({
     where: {
       slug: "sps-qaziabad",
     },
     update: {},
     create: {
-      name: "Demo School",
+      name: "SPS Qaziabad",
       slug: "sps-qaziabad",
       email: "admin@sps-qaziabad.local",
       country: "India",
     },
   });
 
-  const admin = await prisma.user.upsert({
+  // Create / update Super Admin
+  const superAdmin = await prisma.user.upsert({
+    where: {
+      email: "sadmin@spsqaziabad.com",
+    },
+    update: {
+      passwordHash: superAdminPasswordHash,
+      name: "Super Administrator",
+      role: "SUPER_ADMIN",
+      status: "ACTIVE",
+      schoolId: null,
+    },
+    create: {
+      name: "Super Administrator",
+      email: "sadmin@spsqaziabad.com",
+      passwordHash: superAdminPasswordHash,
+      role: "SUPER_ADMIN",
+      status: "ACTIVE",
+      schoolId: null,
+    },
+  });
+
+  // Create / update School Admin
+  const schoolAdmin = await prisma.user.upsert({
     where: {
       email: "admin@sps-qaziabad.local",
     },
     update: {
-      passwordHash,
+      passwordHash: schoolAdminPasswordHash,
+      name: "School Administrator",
       role: "SCHOOL_ADMIN",
       status: "ACTIVE",
       schoolId: school.id,
@@ -52,15 +92,16 @@ async function main() {
     create: {
       name: "School Administrator",
       email: "admin@sps-qaziabad.local",
-      passwordHash,
+      passwordHash: schoolAdminPasswordHash,
       role: "SCHOOL_ADMIN",
       status: "ACTIVE",
       schoolId: school.id,
     },
   });
 
-  console.log("School created:", school.name);
-  console.log("Admin created:", admin.email);
+  console.log("School:", school.name);
+  console.log("Super Admin:", superAdmin.email);
+  console.log("School Admin:", schoolAdmin.email);
 }
 
 main()

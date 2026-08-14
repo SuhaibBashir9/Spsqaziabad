@@ -24,7 +24,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setLoading(true);
@@ -42,27 +42,47 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/admin");
-    router.refresh();
+    const sessionResponse = await fetch("/api/auth/session");
+    const session = await sessionResponse.json();
+
+    if (session?.user?.role === "SUPER_ADMIN") {
+      router.push("/super-admin");
+      router.refresh();
+      return;
+    }
+
+    if (session?.user?.role === "SCHOOL_ADMIN") {
+      router.push("/admin");
+      router.refresh();
+      return;
+    }
+
+    setError(
+      "Your account does not have access to the administration area.",
+    );
+    setLoading(false);
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
+    <main className="flex min-h-screen items-center justify-center bg-muted/30 px-6 py-12">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">
-            Admin Login
-          </CardTitle>
+        <CardHeader>
+          <CardTitle>School Platform</CardTitle>
 
           <CardDescription>
-            Sign in to access your school administration panel.
+            Sign in to access your school account.
           </CardDescription>
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-5"
+          >
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">
+                Email
+              </Label>
 
               <Input
                 id="email"
@@ -78,12 +98,18 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">
+                Password
+              </Label>
 
               <div className="relative">
                 <Input
                   id="password"
-                  type={showPassword ? "text" : "password"}
+                  type={
+                    showPassword
+                      ? "text"
+                      : "password"
+                  }
                   placeholder="Enter your password"
                   value={password}
                   onChange={(event) =>
@@ -97,11 +123,15 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() =>
-                    setShowPassword((value) => !value)
+                    setShowPassword(
+                      (value) => !value,
+                    )
                   }
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground hover:text-foreground"
                 >
-                  {showPassword ? "Hide" : "Show"}
+                  {showPassword
+                    ? "Hide"
+                    : "Show"}
                 </button>
               </div>
             </div>
@@ -120,7 +150,9 @@ export default function LoginPage() {
               className="w-full"
               disabled={loading}
             >
-              {loading ? "Signing in..." : "Sign in"}
+              {loading
+                ? "Signing in..."
+                : "Sign in"}
             </Button>
           </form>
         </CardContent>
