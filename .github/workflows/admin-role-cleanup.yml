@@ -1,0 +1,86 @@
+name: Admin Role Cleanup
+
+on:
+  push:
+    branches: [remove-super-admin]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: "!contains(github.event.head_commit.message, '[admin-cleanup]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Remove Super Admin and normalize Admin role
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          skip = {'.git', '.next', 'node_modules'}
+          text_exts = {'.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.prisma', '.sql', '.md', '.yml', '.yaml'}
+
+          for path in root.rglob('*'):
+              if not path.is_file() or any(part in skip for part in path.parts):
+                  continue
+              if path.suffix.lower() not in text_exts:
+                  continue
+              try:
+                  text = path.read_text()
+              except UnicodeDecodeError:
+                  continue
+              new = text.replace('SCHOOL_ADMIN', 'ADMIN')
+              new = new.replace('SUPER_ADMIN', 'ADMIN')
+              if path.as_posix() == 'prisma/schema.prisma':
+                  new = re.sub(r'^\s*ADMIN\n', '', new, count=1)
+                  # The first ADMIN above came from SUPER_ADMIN; keep the former SCHOOL_ADMIN rename.
+                  new = new.replace('enum UserRole {\n  ADMIN\n  ADMIN\n', 'enum UserRole {\n  ADMIN\n')
+              if path.as_posix() == 'prisma/seed.ts':
+                  new = re.sub(r'\n  const superAdminPassword =.*?\n  const schoolAdminPasswordHash =', '\n  const schoolAdminPasswordHash =', new, flags=re.S)
+                  new = re.sub(r'\n  const superAdminPasswordHash =.*?\n\n  // Create / find the school', '\n\n  // Create / find the school', new, flags=re.S)
+                  new = re.sub(r'\n  // Create / update Super Admin.*?\n  // Create / update School Admin', '\n  // Create / update Admin', new, flags=re.S)
+                  new = re.sub(r'\n  console\.log\("Super Admin:".*?\n', '\n', new)
+                  new = new.replace('SEED_SUPER_ADMIN_PASSWORD', 'SEED_ADMIN_PASSWORD')
+                  new = new.replace('School Administrator', 'Administrator')
+                  new = new.replace('schoolAdmin', 'admin')
+                  new = new.replace('schoolAdminPasswordHash', 'adminPasswordHash')
+              path.write_text(new)
+          PY
+
+          mkdir -p prisma/migrations/20260815003200_remove_super_admin
+          cat > prisma/migrations/20260815003200_remove_super_admin/migration.sql <<'SQL'
+          -- Remove the obsolete SUPER_ADMIN and SCHOOL_ADMIN roles.
+          -- Existing school administrators become ADMIN.
+          UPDATE "User" SET "role" = 'ADMIN' WHERE "role" = 'SUPER_ADMIN';
+          UPDATE "User" SET "role" = 'ADMIN' WHERE "role" = 'SCHOOL_ADMIN';
+
+          CREATE TYPE "UserRole_new" AS ENUM ('ADMIN', 'TEACHER', 'STUDENT', 'PARENT');
+
+          ALTER TABLE "User" ALTER COLUMN "role" TYPE "UserRole_new"
+            USING ("role"::text::"UserRole_new");
+
+          DROP TYPE "UserRole";
+          ALTER TYPE "UserRole_new" RENAME TO "UserRole";
+          SQL
+
+      - name: Verify no obsolete role references remain
+        shell: bash
+        run: |
+          if grep -R --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.next -nE 'SUPER_ADMIN|SCHOOL_ADMIN' .; then
+            echo 'Obsolete role references remain.'
+            exit 1
+          fi
+
+      - name: Commit cleanup
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'chore: remove super admin role [admin-cleanup]'
+          git push origin remove-super-admin
