@@ -26,20 +26,7 @@ async function main() {
     );
   }
 
-  const superAdminPassword =
-    process.env.SEED_SUPER_ADMIN_PASSWORD;
-
-  if (!superAdminPassword) {
-    throw new Error(
-      "SEED_SUPER_ADMIN_PASSWORD is missing from .env.local",
-    );
-  }
-
-  const schoolAdminPasswordHash =
-    bcrypt.hashSync(adminPassword, 12);
-
-  const superAdminPasswordHash =
-    bcrypt.hashSync(superAdminPassword, 12);
+  const adminPasswordHash = bcrypt.hashSync(adminPassword, 12);
 
   // Create / find the school
   const school = await prisma.school.upsert({
@@ -55,35 +42,13 @@ async function main() {
     },
   });
 
-  // Create / update Super Admin
-  const superAdmin = await prisma.user.upsert({
-    where: {
-      email: "sadmin@spsqaziabad.com",
-    },
-    update: {
-      passwordHash: superAdminPasswordHash,
-      name: "Super Administrator",
-      role: "SUPER_ADMIN",
-      status: "ACTIVE",
-      schoolId: null,
-    },
-    create: {
-      name: "Super Administrator",
-      email: "sadmin@spsqaziabad.com",
-      passwordHash: superAdminPasswordHash,
-      role: "SUPER_ADMIN",
-      status: "ACTIVE",
-      schoolId: null,
-    },
-  });
-
   // Create / update School Admin
   const schoolAdmin = await prisma.user.upsert({
     where: {
       email: "admin@sps-qaziabad.local",
     },
     update: {
-      passwordHash: schoolAdminPasswordHash,
+      passwordHash: adminPasswordHash,
       name: "School Administrator",
       role: "SCHOOL_ADMIN",
       status: "ACTIVE",
@@ -92,7 +57,7 @@ async function main() {
     create: {
       name: "School Administrator",
       email: "admin@sps-qaziabad.local",
-      passwordHash: schoolAdminPasswordHash,
+      passwordHash: adminPasswordHash,
       role: "SCHOOL_ADMIN",
       status: "ACTIVE",
       schoolId: school.id,
@@ -100,7 +65,6 @@ async function main() {
   });
 
   console.log("School:", school.name);
-  console.log("Super Admin:", superAdmin.email);
   console.log("School Admin:", schoolAdmin.email);
 }
 
