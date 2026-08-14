@@ -114,7 +114,7 @@ export default function ClassesPage() {
         </h1>
 
         <p className="mt-1 text-muted-foreground">
-          Create and manage your school's classes.
+          Create and manage your school&apos;s classes.
         </p>
       </div>
 

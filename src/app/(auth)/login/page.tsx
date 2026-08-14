@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
@@ -45,13 +45,7 @@ export default function LoginPage() {
     const sessionResponse = await fetch("/api/auth/session");
     const session = await sessionResponse.json();
 
-    if (session?.user?.role === "SUPER_ADMIN") {
-      router.push("/super-admin");
-      router.refresh();
-      return;
-    }
-
-    if (session?.user?.role === "SCHOOL_ADMIN") {
+    if (session?.user?.role === "ADMIN") {
       router.push("/admin");
       router.refresh();
       return;

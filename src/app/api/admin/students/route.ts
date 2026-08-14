@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db/prisma";
 export async function POST(request: Request) {
   const session = await auth();
 
-  if (!session?.user || session.user.role !== "SCHOOL_ADMIN") {
+  if (!session?.user || session.user.role !== "ADMIN") {
     redirect("/login");
   }
 

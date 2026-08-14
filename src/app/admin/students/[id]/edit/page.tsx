@@ -25,7 +25,7 @@ export default async function EditStudentPage({
 
   if (
     !session?.user ||
-    session.user.role !== "SCHOOL_ADMIN" ||
+    session.user.role !== "ADMIN" ||
     !session.user.schoolId
   ) {
     redirect("/login");
@@ -84,7 +84,7 @@ export default async function EditStudentPage({
         </h1>
 
         <p className="mt-1 text-muted-foreground">
-          Update the student's information.
+          Update the student&apos;s information.
         </p>
       </div>
 

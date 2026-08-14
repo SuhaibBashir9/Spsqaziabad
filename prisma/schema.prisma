@@ -8,11 +8,11 @@ datasource db {
 }
 
 enum UserRole {
-  SUPER_ADMIN
-  SCHOOL_ADMIN
+  ADMIN
   TEACHER
   STUDENT
 }
+
 
 enum UserStatus {
   ACTIVE

@@ -26,7 +26,7 @@ export default async function TeachersPage({
 
   if (
     !session?.user ||
-    session.user.role !== "SCHOOL_ADMIN" ||
+    session.user.role !== "ADMIN" ||
     !session.user.schoolId
   ) {
     redirect("/login");

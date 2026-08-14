@@ -13,7 +13,7 @@ export async function GET() {
     );
   }
 
-  if (session.user.role !== "SCHOOL_ADMIN") {
+  if (session.user.role !== "ADMIN") {
     return NextResponse.json(
       { error: "Forbidden" },
       { status: 403 },
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (session.user.role !== "SCHOOL_ADMIN") {
+  if (session.user.role !== "ADMIN") {
     return NextResponse.json(
       { error: "Forbidden" },
       { status: 403 },

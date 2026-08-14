@@ -26,74 +26,72 @@ type SubjectClassManagerProps = {
 export function SubjectClassManager({
   subjectId,
 }: SubjectClassManagerProps) {
-  const [classes, setClasses] =
-    useState<SchoolClass[]>([]);
-
-  const [assignedIds, setAssignedIds] =
-    useState<string[]>([]);
-
-  const [selectedClassId, setSelectedClassId] =
-    useState("");
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [saving, setSaving] =
-    useState(false);
-
-  const [removingId, setRemovingId] =
-    useState<string | null>(null);
-
-  const [error, setError] =
-    useState("");
-
-  async function loadClasses() {
-    try {
-      setLoading(true);
-      setError("");
-
-      const response = await fetch(
-        `/api/admin/subjects/${subjectId}/classes`,
-      );
-
-      const text =
-        await response.text();
-
-      let data: SchoolClass[] = [];
-
-      if (text) {
-        data = JSON.parse(text);
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          "Unable to load classes.",
-        );
-      }
-
-      setClasses(data);
-
-      setAssignedIds(
-        data
-          .filter(
-            (item) =>
-              item.subjects.length > 0,
-          )
-          .map((item) => item.id),
-      );
-    } catch (error) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Unable to load classes.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [classes, setClasses] = useState<SchoolClass[]>([]);
+  const [assignedIds, setAssignedIds] = useState<string[]>([]);
+  const [selectedClassId, setSelectedClassId] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    loadClasses();
+    let cancelled = false;
+
+    async function fetchClasses() {
+      try {
+        const response = await fetch(
+          `/api/admin/subjects/${subjectId}/classes`,
+        );
+
+        const text = await response.text();
+
+        let data: SchoolClass[] = [];
+
+        if (text) {
+          try {
+            data = JSON.parse(text);
+          } catch {
+            throw new Error(
+              "The server returned an invalid response.",
+            );
+          }
+        }
+
+        if (!response.ok) {
+          throw new Error("Unable to load classes.");
+        }
+
+        if (!cancelled) {
+          setClasses(data);
+
+          setAssignedIds(
+            data
+              .filter(
+                (item) => item.subjects.length > 0,
+              )
+              .map((item) => item.id),
+          );
+
+          setError("");
+          setLoading(false);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load classes.",
+          );
+          setLoading(false);
+        }
+      }
+    }
+
+    void fetchClasses();
+
+    return () => {
+      cancelled = true;
+    };
   }, [subjectId]);
 
   async function assignClass() {
@@ -118,21 +116,25 @@ export function SubjectClassManager({
         },
       );
 
-      const text =
-        await response.text();
+      const text = await response.text();
 
       let data: {
         error?: string;
       } = {};
 
       if (text) {
-        data = JSON.parse(text);
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error(
+            "The server returned an invalid response.",
+          );
+        }
       }
 
       if (!response.ok) {
         throw new Error(
-          data.error ||
-            "Unable to assign class.",
+          data.error || "Unable to assign class.",
         );
       }
 
@@ -153,9 +155,7 @@ export function SubjectClassManager({
     }
   }
 
-  async function removeClass(
-    classId: string,
-  ) {
+  async function removeClass(classId: string) {
     const schoolClass = classes.find(
       (item) => item.id === classId,
     );
@@ -185,21 +185,25 @@ export function SubjectClassManager({
         },
       );
 
-      const text =
-        await response.text();
+      const text = await response.text();
 
       let data: {
         error?: string;
       } = {};
 
       if (text) {
-        data = JSON.parse(text);
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error(
+            "The server returned an invalid response.",
+          );
+        }
       }
 
       if (!response.ok) {
         throw new Error(
-          data.error ||
-            "Unable to remove class.",
+          data.error || "Unable to remove class.",
         );
       }
 
@@ -219,11 +223,9 @@ export function SubjectClassManager({
     }
   }
 
-  const availableClasses =
-    classes.filter(
-      (item) =>
-        !assignedIds.includes(item.id),
-    );
+  const availableClasses = classes.filter(
+    (item) => !assignedIds.includes(item.id),
+  );
 
   return (
     <div className="space-y-5">
@@ -302,9 +304,7 @@ export function SubjectClassManager({
         <div className="space-y-2">
           {classes
             .filter((item) =>
-              assignedIds.includes(
-                item.id,
-              ),
+              assignedIds.includes(item.id),
             )
             .map((schoolClass) => (
               <div

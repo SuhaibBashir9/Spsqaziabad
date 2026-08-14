@@ -9,7 +9,7 @@ export async function GET() {
 
     if (
       !session?.user ||
-      session.user.role !== "SCHOOL_ADMIN"
+      session.user.role !== "ADMIN"
     ) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
 
     if (
       !session?.user ||
-      session.user.role !== "SCHOOL_ADMIN"
+      session.user.role !== "ADMIN"
     ) {
       return NextResponse.json(
         { error: "Unauthorized" },

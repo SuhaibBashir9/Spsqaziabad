@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
-import { prisma } from "@/lib/db/prisma";
 import { AddTeacherForm } from "@/components/admin/add-teacher-form";
 
 export default async function NewTeacherPage() {
@@ -10,7 +9,7 @@ export default async function NewTeacherPage() {
 
   if (
     !session?.user ||
-    session.user.role !== "SCHOOL_ADMIN" ||
+    session.user.role !== "ADMIN" ||
     !session.user.schoolId
   ) {
     redirect("/login");

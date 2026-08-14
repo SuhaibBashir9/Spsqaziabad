@@ -55,85 +55,69 @@ const initialForm: NoticeForm = {
 
 export function NoticesManager() {
   const [notices, setNotices] = useState<Notice[]>([]);
-  const [form, setForm] =
-    useState<NoticeForm>(initialForm);
-
-  const [showForm, setShowForm] =
-    useState(false);
-
-  const [editingId, setEditingId] =
-    useState<string | null>(null);
-
-  const [search, setSearch] =
-    useState("");
-
-  const [categoryFilter, setCategoryFilter] =
-    useState("All");
-
-  const [statusFilter, setStatusFilter] =
-    useState("All");
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [saving, setSaving] =
-    useState(false);
-
-  const [changingStatus, setChangingStatus] =
-    useState<string | null>(null);
-
-  const [deletingId, setDeletingId] =
-    useState<string | null>(null);
-
+  const [form, setForm] = useState<NoticeForm>(initialForm);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [changingStatus, setChangingStatus] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
-  async function loadNotices() {
-    try {
-      setLoading(true);
-      setError("");
+  useEffect(() => {
+    let cancelled = false;
 
-      const response = await fetch(
-        "/api/admin/notices",
-      );
+    async function fetchNotices() {
+      try {
+        const response = await fetch("/api/admin/notices");
 
-      const text = await response.text();
+        const text = await response.text();
 
-      let data: Notice[] | { error?: string } = [];
+        let data: Notice[] | { error?: string } = [];
 
-      if (text) {
-        try {
-          data = JSON.parse(text);
-        } catch {
+        if (text) {
+          try {
+            data = JSON.parse(text);
+          } catch {
+            throw new Error(
+              "The server returned an invalid response.",
+            );
+          }
+        }
+
+        if (!response.ok) {
           throw new Error(
-            "The server returned an invalid response.",
+            !Array.isArray(data) && data.error
+              ? data.error
+              : "Unable to load notices.",
           );
         }
-      }
 
-      if (!response.ok) {
-        throw new Error(
-          !Array.isArray(data) && data.error
-            ? data.error
-            : "Unable to load notices.",
-        );
+        if (!cancelled) {
+          setNotices(Array.isArray(data) ? data : []);
+          setError("");
+          setLoading(false);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load notices.",
+          );
+          setLoading(false);
+        }
       }
-
-      setNotices(
-        Array.isArray(data) ? data : [],
-      );
-    } catch (error) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Unable to load notices.",
-      );
-    } finally {
-      setLoading(false);
     }
-  }
 
-  useEffect(() => {
-    loadNotices();
+    void fetchNotices();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function openCreateForm() {
@@ -148,8 +132,7 @@ export function NoticesManager() {
 
     setForm({
       title: notice.title,
-      description:
-        notice.description ?? "",
+      description: notice.description ?? "",
       content: notice.content,
       category: notice.category,
       published: notice.published,
@@ -175,9 +158,7 @@ export function NoticesManager() {
     }
 
     if (!form.content.trim()) {
-      setError(
-        "Please enter the notice content.",
-      );
+      setError("Please enter the notice content.");
       return;
     }
 
@@ -189,9 +170,7 @@ export function NoticesManager() {
         ? `/api/admin/notices/${editingId}`
         : "/api/admin/notices";
 
-      const method = editingId
-        ? "PATCH"
-        : "POST";
+      const method = editingId ? "PATCH" : "POST";
 
       const response = await fetch(url, {
         method,
@@ -206,9 +185,7 @@ export function NoticesManager() {
       let data: Notice | { error?: string };
 
       try {
-        data = text
-          ? JSON.parse(text)
-          : {};
+        data = text ? JSON.parse(text) : {};
       } catch {
         throw new Error(
           "The server returned an invalid response.",
@@ -255,9 +232,7 @@ export function NoticesManager() {
     }
   }
 
-  async function togglePublished(
-    notice: Notice,
-  ) {
+  async function togglePublished(notice: Notice) {
     try {
       setChangingStatus(notice.id);
       setError("");
@@ -280,9 +255,7 @@ export function NoticesManager() {
       let data: Notice | { error?: string };
 
       try {
-        data = text
-          ? JSON.parse(text)
-          : {};
+        data = text ? JSON.parse(text) : {};
       } catch {
         throw new Error(
           "The server returned an invalid response.",
@@ -338,9 +311,7 @@ export function NoticesManager() {
       let data: { error?: string } = {};
 
       try {
-        data = text
-          ? JSON.parse(text)
-          : {};
+        data = text ? JSON.parse(text) : {};
       } catch {
         throw new Error(
           "The server returned an invalid response.",
@@ -349,8 +320,7 @@ export function NoticesManager() {
 
       if (!response.ok) {
         throw new Error(
-          data.error ||
-            "Unable to delete notice.",
+          data.error || "Unable to delete notice.",
         );
       }
 
@@ -390,9 +360,7 @@ export function NoticesManager() {
   }, [notices]);
 
   const filteredNotices = useMemo(() => {
-    const query = search
-      .trim()
-      .toLowerCase();
+    const query = search.trim().toLowerCase();
 
     return notices.filter((notice) => {
       const matchesSearch =
@@ -490,8 +458,7 @@ export function NoticesManager() {
                 onChange={(event) =>
                   setForm((current) => ({
                     ...current,
-                    title:
-                      event.target.value,
+                    title: event.target.value,
                   }))
                 }
                 placeholder="Admissions Open for 2026-27"

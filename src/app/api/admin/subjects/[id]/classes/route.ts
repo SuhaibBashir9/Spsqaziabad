@@ -16,7 +16,7 @@ async function authorize(
 
   if (
     !session?.user ||
-    session.user.role !== "SCHOOL_ADMIN"
+    session.user.role !== "ADMIN"
   ) {
     return {
       error: NextResponse.json(

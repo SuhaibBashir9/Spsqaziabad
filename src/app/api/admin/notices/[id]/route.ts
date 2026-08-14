@@ -21,7 +21,7 @@ async function getAuthorizedNotice(id: string) {
     };
   }
 
-  if (session.user.role !== "SCHOOL_ADMIN") {
+  if (session.user.role !== "ADMIN") {
     return {
       error: NextResponse.json(
         { error: "Forbidden" },
